@@ -164,7 +164,7 @@ cython_debug/
 
 *.mp3
 *.mp4
-*.txt
+
 VAR.py
 
 extracted_text.txt

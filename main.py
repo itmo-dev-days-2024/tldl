@@ -6,6 +6,8 @@ from abc import ABCMeta, abstractmethod, abstractproperty
 from typing import Optional
 from tempfile import NamedTemporaryFile
 
+from transcriber.transcriber import transcribe
+
 
 @dataclass
 class Chapter:
@@ -74,7 +76,8 @@ class TranscriberHandler(AbstractHandler):
 
     def handle(self, context: TldlContext) -> TldlContext:
         # here context gets populated by full text transcribtion
-        context.transcribed_text = "..."
+        result = transcribe(context.source_filename)
+        context.transcribed_text = result
         return super().handle(context)
 
 
