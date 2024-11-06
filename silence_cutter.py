@@ -1,141 +1,35 @@
-# Created by DarkTrick - 4fb5f723849d32782e723c34bfd132e442d378d7
-
-import subprocess
-import tempfile
-import sys
 import os
-import logging
+from moviepy.editor import VideoFileClip
+from pydub import AudioSegment
+from pydub.silence import detect_leading_silence
 
-# ===========================
-# ==== Configure logging ====
-# ===========================
-log_level = logging.ERROR
-log_filename = 'silence_cutter.log'
-logger = logging.getLogger('')
-logger.setLevel(log_level)
-log_handler = logging.FileHandler(log_filename, delay=True)
-logger.addHandler(log_handler)
+def detect_leading_and_trailing_silence(audio_file, silence_threshold):
+    audio = AudioSegment.from_file(audio_file)
 
+    leading_silence_duration = detect_leading_silence(audio, silence_threshold=silence_threshold)
 
-def findSilences(filename, dB = -35):
-  """
-    returns a list:
-      even elements (0,2,4, ...) denote silence start time
-      uneven elements (1,3,5, ...) denote silence end time
+    reversed_audio = audio.reverse()
+    trailing_silence_duration = detect_leading_silence(reversed_audio, silence_threshold=silence_threshold)
 
-  """
-  logging.debug(f"findSilences ()")
-  logging.debug(f"    - filename = {filename}")
-  logging.debug(f"    - dB = {dB}")
+    return leading_silence_duration, trailing_silence_duration
 
-  command = ["ffmpeg","-i",filename,
-             "-af","silencedetect=n=" + str (dB) + "dB:d=1",
-             "-f","null","-"]
-  output = subprocess.run (command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-  s = str(output)
-  lines = s.split("\\n")
-  time_list = []
-  logging.debug("  lines: ```\n" + "\n".join(lines) + "```\n\n")
+def trim_video(infile, outfile, leading_silence_duration, trailing_silence_duration):
+    video = VideoFileClip(infile)
 
-  for line in lines:
-    if ("silencedetect" in line):
-        words = line.split(" ")
-        logging.debug("  words: " + str(words))
-        for i in range (len(words)):
-            if ("silence_start" in words[i]):
-              time_list.append (float(words[i+1]))
-            if "silence_end" in words[i]:
-              time_list.append (float (words[i+1]))
-  silence_section_list = list (zip(*[iter(time_list)]*2))
+    start_time = leading_silence_duration / 1000
+    end_time = video.duration - (trailing_silence_duration / 1000)
 
-  #return silence_section_list
-  return time_list
+    trimmed_video = video.subclip(start_time, end_time)
 
+    trimmed_video.write_videofile(outfile, codec="libx264", audio_codec="aac")
 
+def cut_silences(infile, outfile, silence_threshold = -30):
+    audio_file = "audio.wav"
+    video = VideoFileClip(infile)
+    video.audio.write_audiofile(audio_file)
 
-def getVideoDuration(filename:str) -> float:
-  logging.debug(f"getVideoDuration ()")
-  logging.debug(f"    - filename = {filename}")
+    leading_silence_duration, trailing_silence_duration = detect_leading_and_trailing_silence(audio_file, silence_threshold)
 
-  command = ["ffprobe","-i",filename,"-v","quiet",
-             "-show_entries","format=duration","-hide_banner",
-             "-of","default=noprint_wrappers=1:nokey=1"]
+    trim_video(infile, outfile, leading_silence_duration, trailing_silence_duration)
 
-  output = subprocess.run (command, stdout=subprocess.PIPE)
-  s = str(output.stdout, "UTF-8")
-  return float (s)
-
-def getSectionsOfNewVideo (silences, duration):
-  """Returns timings for parts, where the video should be kept"""
-  return [0.0] + silences + [duration]
-
-
-def ffmpeg_filter_getSegmentFilter(videoSectionTimings):
-  ret = ""
-  for i in range (int (len(videoSectionTimings)/2)):
-    start = videoSectionTimings[2*i]
-    end   = videoSectionTimings[2*i+1]
-    ret += "between(t," + str(start) + "," + str(end) + ")+"
-  # cut away last "+"
-  ret = ret[:-1]
-  return ret
-
-def getFileContent_videoFilter(videoSectionTimings):
-  ret = "select='"
-  ret += ffmpeg_filter_getSegmentFilter (videoSectionTimings)
-  ret += "', setpts=N/FRAME_RATE/TB"
-  return ret
-
-def getFileContent_audioFilter(videoSectionTimings):
-  ret = "aselect='"
-  ret += ffmpeg_filter_getSegmentFilter (videoSectionTimings)
-  ret += "', asetpts=N/SR/TB"
-  return ret
-
-def writeFile (filename, content):
-  logging.debug(f"writeFile ()")
-  logging.debug(f"    - filename = {filename}")
-
-  with open (filename, "w") as file:
-    file.write (str(content))
-
-
-def ffmpeg_run (file, videoFilter, audioFilter, outfile):
-  logging.debug(f"ffmpeg_run ()")
-
-  # prepare filter files
-  vFile = tempfile.NamedTemporaryFile (mode="w", encoding="UTF-8", prefix="silence_video")
-  aFile = tempfile.NamedTemporaryFile (mode="w", encoding="UTF-8", prefix="silence_audio")
-
-  videoFilter_file = vFile.name #"/tmp/videoFilter" # TODO: replace with tempfile
-  audioFilter_file = aFile.name #"/tmp/audioFilter" # TODO: replace with tempfile
-  writeFile (videoFilter_file, videoFilter)
-  writeFile (audioFilter_file, audioFilter)
-
-  command = ["ffmpeg","-i",file,
-              "-filter_script:v",videoFilter_file,
-              "-filter_script:a",audioFilter_file,
-              outfile]
-  subprocess.run (command)
-
-  vFile.close()
-  aFile.close()
-
-
-
-def cut_silences(infile, outfile, dB = -30):
-  logging.debug(f"cut_silences ()")
-  logging.debug(f"    - infile = {infile}")
-  logging.debug(f"    - outfile = {outfile}")
-  logging.debug(f"    - dB = {dB}")
-
-  print ("detecting silences")
-  silences = findSilences (infile,dB)
-  duration = getVideoDuration (infile)
-  videoSegments = getSectionsOfNewVideo (silences, duration)
-
-  videoFilter = getFileContent_videoFilter (videoSegments)
-  audioFilter = getFileContent_audioFilter (videoSegments)
-
-  print ("create new video")
-  ffmpeg_run (infile, videoFilter, audioFilter, outfile)
+    os.remove(audio_file)
