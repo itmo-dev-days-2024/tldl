@@ -1,3 +1,4 @@
+import os
 import sys
 import subprocess
 from shutil import copyfile
@@ -5,6 +6,7 @@ from dataclasses import dataclass
 from abc import ABCMeta, abstractmethod, abstractproperty
 from typing import Optional
 from tempfile import NamedTemporaryFile
+from silence_cutter import cut_silences
 
 
 @dataclass
@@ -66,7 +68,9 @@ class CopyFileHandler(AbstractHandler):
 class SilenceCutHandler(AbstractHandler):
 
     def handle(self, context: TldlContext) -> TldlContext:
-        # here goes cutting and copying to new file
+        temp_filename = "silence_cutter_temp"
+        cut_silences(context.source_filename, temp_filename, dB=-30)
+        os.replace(temp_filename, context.source_filename)
         return super().handle(context)
 
 

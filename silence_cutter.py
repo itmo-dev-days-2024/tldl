@@ -123,7 +123,7 @@ def ffmpeg_run (file, videoFilter, audioFilter, outfile):
 
 
 
-def cut_silences(infile, outfile, dB = -35):
+def cut_silences(infile, outfile, dB = -30):
   logging.debug(f"cut_silences ()")
   logging.debug(f"    - infile = {infile}")
   logging.debug(f"    - outfile = {outfile}")
@@ -139,60 +139,3 @@ def cut_silences(infile, outfile, dB = -35):
 
   print ("create new video")
   ffmpeg_run (infile, videoFilter, audioFilter, outfile)
-
-def printHelp():
-  print ("Usage:")
-  print ("   silence_cutter.py [infile] [optional: outfile] [optional: dB]")
-  print ("   ")
-  print ("        [outfile]")
-  print ("         Default: [infile]_cut")
-  print ("   ")
-  print ("        [dB]")
-  print ("         Default: -30")
-  print ("         A suitable value might be around -50 to -35.")
-  print ("         The lower the more volume will be defined das 'silent'")
-  print ("         -30: Cut Mouse clicks and mouse movent; cuts are very recognizable.")
-  print ("         -35: Cut inhaling breath before speaking; cuts are quite recognizable.")
-  print ("         -40: Cuts are almost not recognizable.")
-  print ("         -50: Cuts are almost not recognizable.")
-  print ("              Cuts nothing, if there is background noise.")
-  print ("         ")
-  print ("")
-  print ("Dependencies:")
-  print ("          ffmpeg")
-  print ("          ffprobe")
-
-def main():
-  logging.debug(f"main ()")
-  args = sys.argv[1:]
-  if (len(args) < 1):
-    printHelp()
-    return
-
-  if (args[0] == "--help"):
-    printHelp()
-    return
-
-  infile = args[0]
-
-  if (not os.path.isfile (infile)):
-    print ("ERROR: The infile could not be found:\n" + infile)
-    return
-
-  # set default values for optionl arguments
-  tmp = os.path.splitext (infile)
-  outfile = tmp[0] + "_cut" + tmp[1]
-  dB = -30
-
-  if (len(args) >= 2):
-    outfile = args[1]
-
-  if (len(args) >= 3):
-    dB = args[2]
-
-
-  cut_silences (infile, outfile, dB)
-
-
-if __name__ == "__main__":
-  main()
