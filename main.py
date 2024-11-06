@@ -96,7 +96,8 @@ class SummarizerHandler(AbstractHandler):
             for chunk in context.transcribed_text:
                 transcribed_file.write(str(chunk))
             context.summary = gigachat.get_summarization(transcribed_file.name)
-            charpers_from_yagpt = ya_gpt.process_text(transcribed_file.name)
+            all_file_content = transcribed_file.read()
+            charpers_from_yagpt = ya_gpt.process_text(all_file_content, 220)
             context.chapters = [
                 Chapter(ch[0], ch[1], ch[2], ch[3]) for ch in charpers_from_yagpt
             ]
