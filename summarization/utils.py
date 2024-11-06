@@ -8,7 +8,28 @@ def read_file_text(file_path):
         return "Файл не найден."
     except Exception as e:
         return f"Произошла ошибка при чтении файла: {e}"
+   
+   
+def read_lines_from_file(file_path, num_lines):
+
+    try:
+        with open(file_path, 'r', encoding='utf-8') as file:
+            lines = []
+            for _ in range(num_lines):
+                line = file.readline()
+                if not line:
+                    break
+                lines.append(line.rstrip('\n'))
+                
+        return '\n'.join(lines)
     
+    except FileNotFoundError:
+        return "Файл не найден."
+    except Exception as e:
+        return f"Произошла ошибка при чтении файла: {e}"
+    
+    
+
     
 def write_text_to_file(file_path, text):
 

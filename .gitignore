@@ -162,3 +162,7 @@ cython_debug/
 #.idea/
 
 VAR.py
+
+extracted_text.txt
+
+result.txt
