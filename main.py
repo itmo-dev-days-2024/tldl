@@ -5,9 +5,14 @@ from dataclasses import dataclass
 from abc import ABCMeta, abstractmethod, abstractproperty
 from typing import Optional
 from tempfile import NamedTemporaryFile
+
+import summarization.giga_chat.programm as gigachat 
+import summarization.ya_gpt.programm as ya_gpt
+
 from silence_cutter import cut_silences
 
 from transcriber.transcriber import transcribe, TranscribeToken
+
 
 
 @dataclass
@@ -87,12 +92,11 @@ class SummarizerHandler(AbstractHandler):
 
     def handle(self, context: TldlContext) -> TldlContext:
         # here context gets populated for Chapters
-        context.summary = "This lection introduces us to c++ language..."
+        
+        context.summary = gigachat.get_summarization(context.transcribed_text)
+        charpers_from_yagpt = ya_gpt.process_text(context.transcribed_text)
         context.chapters = [
-            Chapter("Introduction", "...", 0, 15 * 1),
-            Chapter("Syntax", "...", 15 * 1, 15 * 3),
-            Chapter("Course Schedule", "...", 15 * 3, 15 * 4),
-        ]
+            Chapter(ch[0], ch[1], ch[2], ch[3]) for ch in  charpers_from_yagpt ]
         return super().handle(context)
 
 
