@@ -7,7 +7,7 @@ URL = "https://llm.api.cloud.yandex.net/foundationModels/v1/completion"
 
 def run(iam_token, folder_id, user_text):    
     prompt = {
-    "modelUri": f"gpt://{folder_id}/yandexgpt-lite",
+    "modelUri": f"gpt://{folder_id}/yandexgpt",
     "completionOptions": {
         "stream": False,
         "temperature": 0.3,
@@ -16,16 +16,16 @@ def run(iam_token, folder_id, user_text):
     "messages": [
             {
                 "role": "system",
-                "text": """Ты программа, которая должна обрабатывать входящие транскрипции видео и суммаризировать их, 
-                    выбирая самые важные моменты. Ответ необходимо давать в формате `[<time start>s -> <time end>s]  <summarization text>`"""
+                "text": """Ты программа, которая должна сократить транскрипцию, которая подается на входе. 
+                    Объединяй сразу по 10-20 временных промежутков. Ответ даешь одной строчкой в формате `[<time start>s -> <time end>s]  <summarization text>`"""
             },
             {
                 "role": "user",
-                "text": f"Предоствавь суммаризацию этой транскрипции: {user_text}"
+                "text": f"Входные данные: {user_text}"
             }
         ]
     }   
-
+    # Ты сокращаешь общее число временных промежутков. 
 
     url = "https://llm.api.cloud.yandex.net/foundationModels/v1/completion"
     headers = {
@@ -51,8 +51,8 @@ def read_and_process_chunks(file_path, chunk_size):
                 if not lines:
                     break
                 cur_result = run(VAR.key, VAR.folder,'\n'.join(lines))#['result']['alternatives'][0]['message']['text']
-                print(cur_result)
-                print(i)
+                # print(cur_result)
+                # print(i)
                 i +=1
                 result += cur_result + '\n'
                 
