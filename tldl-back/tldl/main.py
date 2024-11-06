@@ -4,6 +4,8 @@ import sys
 
 from aiogram import Bot, Dispatcher
 from aiogram.utils.callback_answer import CallbackAnswerMiddleware
+from aiogram.client.session.aiohttp import AiohttpSession
+from aiogram.client.telegram import TelegramAPIServer
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 
 
@@ -15,8 +17,9 @@ from tldl.middlewares import DbSessionMiddleware
 async def run_bot():
     engine = create_async_engine(url=settings.pg_url, echo=True)
     sessionmaker = async_sessionmaker(engine, expire_on_commit=False)
-
-    bot = Bot(settings.bot_token)
+    
+    localserver = AiohttpSession(api=TelegramAPIServer.from_base(settings.tg_api_server))
+    bot = Bot(token=settings.bot_token, session=localserver)
 
     # Setup dispatcher and bind routers to it
     dp = Dispatcher()

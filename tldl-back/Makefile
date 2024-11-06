@@ -13,7 +13,7 @@ all:
 
 devenv:
 	rm -rf env
-	python3.13 -m venv env
+	python3.12 -m venv env
 	env/bin/pip install -Ue '.[dev]'
 
 clean:

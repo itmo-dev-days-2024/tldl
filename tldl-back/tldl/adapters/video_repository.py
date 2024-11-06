@@ -1,26 +1,20 @@
 import io
 import logging as log
 
-from minio import Minio
-from minio.helpers import ObjectWriteResult
+from botocore.client import BaseClient
 
 
 class VideoRepository:
-    _client: Minio
+    _client: BaseClient
     _bucket: str
 
-    def __init__(self, bucket: str, client: Minio):
+    def __init__(self, bucket: str, client: BaseClient):
         self._client = client
         self._bucket = bucket
 
-    def upload_file(self, object_name: str, data: io.BytesIO) -> ObjectWriteResult:
-        result = self._client.put_object(
-            bucket_name=self._bucket, object_name=object_name, data=data
-        )
-        return result
+    def upload_file(self, object_name: str, data: str):
+        self._client.upload_file(data, self._bucket, object_name)
 
-    def get_file(self, object_name: str) -> io.BytesIO:
-        result = self._client.get_object(
-            bucket_name=self._bucket, object_name=object_name
-        )
+    def get_file(self, object_name: str, to_filename: str):
+        result = self._client.get_object(self._bucket, object_name, to_filename)
         return result.data
