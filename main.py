@@ -6,13 +6,12 @@ from abc import ABCMeta, abstractmethod, abstractproperty
 from typing import Optional
 from tempfile import NamedTemporaryFile
 
-import summarization.giga_chat.programm as gigachat 
+import summarization.giga_chat.programm as gigachat
 import summarization.ya_gpt.programm as ya_gpt
 
 from silence_cutter import cut_silences
 
 from transcriber.transcriber import transcribe, TranscribeToken
-
 
 
 @dataclass
@@ -29,6 +28,7 @@ class TldlContext:
     """
     Holds all needed variables and info about processing pipeline
     """
+
     source_filename: str = ""
     transcribed_text: list[TranscribeToken] = None
     summary: str = ""
@@ -92,11 +92,12 @@ class SummarizerHandler(AbstractHandler):
 
     def handle(self, context: TldlContext) -> TldlContext:
         # here context gets populated for Chapters
-        
+
         context.summary = gigachat.get_summarization(context.transcribed_text)
         charpers_from_yagpt = ya_gpt.process_text(context.transcribed_text)
         context.chapters = [
-            Chapter(ch[0], ch[1], ch[2], ch[3]) for ch in  charpers_from_yagpt ]
+            Chapter(ch[0], ch[1], ch[2], ch[3]) for ch in charpers_from_yagpt
+        ]
         return super().handle(context)
 
 
@@ -114,7 +115,7 @@ class ChaptersHandler(AbstractHandler):
             with NamedTemporaryFile("w", suffix=".mp4") as output_file:
                 command = [
                     "ffmpeg",
-                    "-y", # Override files without asking
+                    "-y",  # Override files without asking
                     "-i",
                     context.source_filename,
                     "-i",
@@ -136,8 +137,12 @@ class ChaptersHandler(AbstractHandler):
 
 
 def main():
-    handler = SilenceCutHandler().set_next(
-        TranscriberHandler().set_next(SummarizerHandler().set_next(ChaptersHandler()))
+    handler = CopyFileHandler().set_next(
+        SilenceCutHandler().set_next(
+            TranscriberHandler().set_next(
+                SummarizerHandler().set_next(ChaptersHandler())
+            )
+        )
     )
 
     context = TldlContext()
@@ -150,6 +155,7 @@ def main():
         exit(-1)
 
     print("Finished, filename: ", finish_context.source_filename)
+    print("")
 
 
 if __name__ == "__main__":
