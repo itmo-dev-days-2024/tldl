@@ -6,6 +6,8 @@ from abc import ABCMeta, abstractmethod, abstractproperty
 from typing import Optional
 from tempfile import NamedTemporaryFile
 
+from transcriber.transcriber import transcribe, TranscribeToken
+
 
 @dataclass
 class Chapter:
@@ -21,9 +23,8 @@ class TldlContext:
     """
     Holds all needed variables and info about processing pipeline
     """
-
     source_filename: str = ""
-    transcribed_text: str = ""
+    transcribed_text: list[TranscribeToken] = None
     summary: str = ""
     chapters: list[Chapter] = None
 
@@ -74,7 +75,8 @@ class TranscriberHandler(AbstractHandler):
 
     def handle(self, context: TldlContext) -> TldlContext:
         # here context gets populated by full text transcribtion
-        context.transcribed_text = "..."
+        transcribe_result = transcribe(context.source_filename)
+        context.transcribed_text = transcribe_result
         return super().handle(context)
 
 
@@ -84,9 +86,9 @@ class SummarizerHandler(AbstractHandler):
         # here context gets populated for Chapters
         context.summary = "This lection introduces us to c++ language..."
         context.chapters = [
-            Chapter("Introduction", "...", 0, 60 * 11),
-            Chapter("Syntax", "...", 60 * 12, 60 * 24),
-            Chapter("Course Schedule", "...", 60 * 30, 60 * 40),
+            Chapter("Introduction", "...", 0, 15 * 1),
+            Chapter("Syntax", "...", 15 * 1, 15 * 3),
+            Chapter("Course Schedule", "...", 15 * 3, 15 * 4),
         ]
         return super().handle(context)
 
@@ -135,6 +137,7 @@ def main():
     context.source_filename = sys.argv[1]
 
     finish_context = handler.handle(context)
+
     if finish_context is None:
         print("Failed :c")
         exit(-1)
