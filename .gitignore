@@ -163,6 +163,4 @@ cython_debug/
 
 VAR.py
 
-extracted_text.txt
-
-result.txt
+*.txt

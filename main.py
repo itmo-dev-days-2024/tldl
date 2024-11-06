@@ -5,7 +5,8 @@ from dataclasses import dataclass
 from abc import ABCMeta, abstractmethod, abstractproperty
 from typing import Optional
 from tempfile import NamedTemporaryFile
-
+import summarization.giga_chat.programm as gigachat 
+import summarization.ya_gpt.programm as ya_gpt
 
 @dataclass
 class Chapter:
@@ -82,12 +83,11 @@ class SummarizerHandler(AbstractHandler):
 
     def handle(self, context: TldlContext) -> TldlContext:
         # here context gets populated for Chapters
-        context.summary = "This lection introduces us to c++ language..."
+        
+        context.summary = gigachat.get_summarization(context.transcribed_text)
+        charpers_from_yagpt = ya_gpt.process_text(context.transcribed_text)
         context.chapters = [
-            Chapter("Introduction", "...", 0, 60 * 11),
-            Chapter("Syntax", "...", 60 * 12, 60 * 24),
-            Chapter("Course Schedule", "...", 60 * 30, 60 * 40),
-        ]
+            Chapter(ch[0], ch[1], ch[2], ch[3]) for ch in  charpers_from_yagpt ]
         return super().handle(context)
 
 

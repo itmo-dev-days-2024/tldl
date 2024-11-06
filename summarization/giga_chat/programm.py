@@ -6,10 +6,10 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.chat_models.gigachat import GigaChat
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.embeddings.gigachat import GigaChatEmbeddings
-
+from summarization.keys import key_gigachat
 # from ml.summarization import get_summarization
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-credentials = 'ZmQ1ZTQyN2YtODJmNy00YzE0LWIzMTAtMzk4NmY5MDQ3MGQzOmJjNTRjZGI5LWRhZWQtNGMzMS04MTFjLTYzM2NjNTVjOTFlOQ=='
+credentials = key_gigachat
 # from PyPDF2 import PdfFileReader
 llm = GigaChat(credentials=credentials, verify_ssl_certs=False, scope="GIGACHAT_API_PERS")
 embeddings = GigaChatEmbeddings(credentials=credentials, verify_ssl_certs=False, scope="GIGACHAT_API_PERS")
@@ -42,12 +42,13 @@ llm = GigaChat(credentials=credentials, verify_ssl_certs=False, scope="GIGACHAT_
 #         txt_file.write(extracted_text)
 
 
-def get_summarization(filename: str, llm: GigaChat):
+def get_summarization(filename: str):
+    llm = settings_init["llm"]
 
     # Пример использования функции
     # parse_pdf_text_to_txt(filename, "extracted_text.txt")
 
-    loader = TextLoader("extracted_text.txt", encoding="utf-8")
+    loader = TextLoader(filename, encoding="utf-8")
     doc = loader.load()
 
     split_docs = RecursiveCharacterTextSplitter(chunk_size=8000, chunk_overlap=1500).split_documents(
@@ -55,14 +56,14 @@ def get_summarization(filename: str, llm: GigaChat):
     )
 
     map_prompt = PromptTemplate(
-    template="Оставить только 5 самых важных с указанием секунды, когда они были произнесены. Входные данные:\n{text} ",
+    template="Вкраце расскажи о том, что обсуждалось на лекции. Входные данные:\n{text} ",
     input_variables=["text"]
     )
 
     chain = load_summarize_chain(llm, chain_type="map_reduce", map_prompt=map_prompt)
     res = chain.run(split_docs)
 
-    return {'text': res}
+    return res
 
-print(get_summarization("", settings_init["llm"])["text"])
+# print(get_summarization("", )["text"])
 
