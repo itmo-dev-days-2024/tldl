@@ -2,7 +2,7 @@ import sys
 import subprocess
 from shutil import copyfile
 from dataclasses import dataclass
-from abc import ABCMeta, abstractmethod, abstractproperty
+from abc import ABCMeta, abstractmethod 
 from typing import Optional
 from tempfile import NamedTemporaryFile
 

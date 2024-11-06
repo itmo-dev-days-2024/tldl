@@ -12,6 +12,7 @@ class AppSettings(BaseSettings):
     pg_url: str = os.getenv(
         "PG_URL", "postgresql+asyncpg://tldl:crackme@localhost:5432/tldl"
     )
+    bucket_name: str = os.getenv("MINIO_BUCKET", "tldl-raw")
 
 
 settings = AppSettings()
