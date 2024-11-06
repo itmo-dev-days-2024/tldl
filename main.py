@@ -5,8 +5,15 @@ from dataclasses import dataclass
 from abc import ABCMeta, abstractmethod, abstractproperty
 from typing import Optional
 from tempfile import NamedTemporaryFile
+
 import summarization.giga_chat.programm as gigachat 
 import summarization.ya_gpt.programm as ya_gpt
+
+from silence_cutter import cut_silences
+
+from transcriber.transcriber import transcribe, TranscribeToken
+
+
 
 @dataclass
 class Chapter:
@@ -22,9 +29,8 @@ class TldlContext:
     """
     Holds all needed variables and info about processing pipeline
     """
-
     source_filename: str = ""
-    transcribed_text: str = ""
+    transcribed_text: list[TranscribeToken] = None
     summary: str = ""
     chapters: list[Chapter] = None
 
@@ -67,7 +73,9 @@ class CopyFileHandler(AbstractHandler):
 class SilenceCutHandler(AbstractHandler):
 
     def handle(self, context: TldlContext) -> TldlContext:
-        # here goes cutting and copying to new file
+        with NamedTemporaryFile("w", suffix=".mp4") as silence_file:
+            cut_silences(context.source_filename, silence_file.name, dB=-30)
+            copyfile(silence_file.name, context.source_filename)
         return super().handle(context)
 
 
@@ -75,7 +83,8 @@ class TranscriberHandler(AbstractHandler):
 
     def handle(self, context: TldlContext) -> TldlContext:
         # here context gets populated by full text transcribtion
-        context.transcribed_text = "..."
+        transcribe_result = transcribe(context.source_filename)
+        context.transcribed_text = transcribe_result
         return super().handle(context)
 
 
@@ -135,6 +144,7 @@ def main():
     context.source_filename = sys.argv[1]
 
     finish_context = handler.handle(context)
+
     if finish_context is None:
         print("Failed :c")
         exit(-1)
