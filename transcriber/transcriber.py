@@ -6,6 +6,8 @@ class TranscribeToken:
     segment_start: float
     segment_finish: float
     segment_text: str
+    def __str__ (self):
+        return "[%.2fs -> %.2fs] %s \n" % (self.segment_start, self.segment_finish, self.segment_text)
 
 def transcribe(source_filename) -> list[TranscribeToken]:
 
@@ -18,5 +20,5 @@ def transcribe(source_filename) -> list[TranscribeToken]:
 
     for segment in segments:
         result_list.append(TranscribeToken(round(segment.start, 2) , round(segment.end, 2), segment.text))
-        # print("[%.2fs -> %.2fs] %s" % (segment.start, segment.end, segment.text))
+        print("[%.2fs -> %.2fs] %s" % (segment.start, segment.end, segment.text))
     return result_list

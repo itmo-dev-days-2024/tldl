@@ -92,7 +92,7 @@ class SummarizerHandler(AbstractHandler):
 
     def handle(self, context: TldlContext) -> TldlContext:
         # here context gets populated for Chapters
-        with NamedTemporaryFile("+rw", suffix=".txt") as transcribed_file:
+        with NamedTemporaryFile("+w", suffix=".txt") as transcribed_file:
             for chunk in context.transcribed_text:
                 transcribed_file.write(str(chunk))
             context.summary = gigachat.get_summarization(transcribed_file.name)
