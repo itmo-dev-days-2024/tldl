@@ -69,7 +69,7 @@ class SilenceCutHandler(AbstractHandler):
 
     def handle(self, context: TldlContext) -> TldlContext:
         with NamedTemporaryFile("w", suffix=".mp4") as silence_file:
-            cut_silences(context.source_filename, silence_file.name, dB=-30)
+            cut_silences(context.source_filename, silence_file.name)
             copyfile(silence_file.name, context.source_filename)
         return super().handle(context)
 
