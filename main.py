@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from abc import ABCMeta, abstractmethod, abstractproperty
 from typing import Optional
 from tempfile import NamedTemporaryFile
+from silence_cutter import cut_silences
 
 from transcriber.transcriber import transcribe, TranscribeToken
 
@@ -67,7 +68,9 @@ class CopyFileHandler(AbstractHandler):
 class SilenceCutHandler(AbstractHandler):
 
     def handle(self, context: TldlContext) -> TldlContext:
-        # here goes cutting and copying to new file
+        with NamedTemporaryFile("w", suffix=".mp4") as silence_file:
+            cut_silences(context.source_filename, silence_file.name, dB=-30)
+            copyfile(silence_file.name, context.source_filename)
         return super().handle(context)
 
 
