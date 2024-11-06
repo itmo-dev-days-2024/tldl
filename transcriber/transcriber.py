@@ -18,5 +18,5 @@ def transcribe(source_filename) -> list[TranscribeToken]:
 
     for segment in segments:
         result_list.append(TranscribeToken(round(segment.start, 2) , round(segment.end, 2), segment.text))
-        print("[%.2fs -> %.2fs] %s" % (segment.start, segment.end, segment.text))
+        # print("[%.2fs -> %.2fs] %s" % (segment.start, segment.end, segment.text))
     return result_list

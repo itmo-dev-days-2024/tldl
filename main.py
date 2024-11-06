@@ -138,8 +138,6 @@ def main():
 
     finish_context = handler.handle(context)
 
-    print(finish_context.transcribed_text)
-
     if finish_context is None:
         print("Failed :c")
         exit(-1)
