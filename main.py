@@ -92,12 +92,14 @@ class SummarizerHandler(AbstractHandler):
 
     def handle(self, context: TldlContext) -> TldlContext:
         # here context gets populated for Chapters
-
-        context.summary = gigachat.get_summarization(context.transcribed_text)
-        charpers_from_yagpt = ya_gpt.process_text(context.transcribed_text)
-        context.chapters = [
-            Chapter(ch[0], ch[1], ch[2], ch[3]) for ch in charpers_from_yagpt
-        ]
+        with NamedTemporaryFile("+rw", suffix=".txt") as transcribed_file:
+            for chunk in context.transcribed_text:
+                transcribed_file.write(str(chunk))
+            context.summary = gigachat.get_summarization(transcribed_file.name)
+            charpers_from_yagpt = ya_gpt.process_text(transcribed_file.name)
+            context.chapters = [
+                Chapter(ch[0], ch[1], ch[2], ch[3]) for ch in charpers_from_yagpt
+            ]
         return super().handle(context)
 
 
