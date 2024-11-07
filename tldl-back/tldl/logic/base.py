@@ -26,7 +26,7 @@ class Chapter:
     end_pts: int
 
     def __str__(self):
-        return f"[{self.start_pts} - {self.end_pts}] - {self.title}: {self.description}"
+        return f"{self.start_pts / 60}:{self.start_pts % 60} - {self.title}: {self.description}"
 
 
 @dataclass
