@@ -1,4 +1,5 @@
 import asyncio
+import dataclasses
 import logging
 from tempfile import NamedTemporaryFile
 
@@ -6,6 +7,7 @@ from aiogram import Bot
 from aiogram.types import FSInputFile
 from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.client.telegram import TelegramAPIServer
+from aiogram.enums.parse_mode import ParseMode
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 
@@ -14,6 +16,7 @@ from tldl.settings import settings
 from tldl.adapters import VideoRepository, create_boto_client
 from tldl.schema import VideoProcessing, VideoStatus
 from tldl.logic import (
+    Chapter,
     CopyFileHandler,
     SilenceCutHandler,
     TranscriberHandler,
@@ -42,7 +45,7 @@ async def send_notifications():
     sessionmaker = async_sessionmaker(engine, expire_on_commit=False)
 
     while True:
-        await asyncio.sleep(5)
+        await asyncio.sleep(1)
         async with sessionmaker() as session:
             async with session.begin():
                 query = (
@@ -64,10 +67,30 @@ async def send_notifications():
                         tg_fs_input_file = FSInputFile(
                             tmp_file.name, filename=processed_video.ready_file_path
                         )
-                        await bot.send_document(
+                        video_msg = await bot.send_document(
                             document=tg_fs_input_file,
                             chat_id=processed_video.chat_id,
                             reply_to_message_id=processed_video.msg_id,
+                        )
+
+                        chapters = list(
+                            map(
+                                lambda x: Chapter(**x),
+                                processed_video.meta.get("chapters", []),
+                            )
+                        )
+                        msg_header = ", ".join(processed_video.meta.get("hashtags", []))
+                        msg_text = (
+                            msg_header
+                            + "\n"
+                            + "\n".join(list(map(lambda x: str(x), chapters)))
+                        )
+
+                        await bot.send_message(
+                            text=msg_text,
+                            chat_id=video_msg.chat.id,
+                            reply_to_message_id=video_msg.message_id,
+                            parse_mode=ParseMode.MARKDOWN,
                         )
                     query = (
                         update(VideoProcessing)
@@ -127,15 +150,14 @@ async def process_records():
                             )
 
                             logger.info("Finished processing for video")
-
-                            message_text = "\n".join(
-                                map(lambda x: str(x), handler_ctx.chapters)
+                            new_created_video.meta["chapters"] = list(
+                                map(
+                                    lambda x: dataclasses.asdict(x),
+                                    handler_ctx.chapters,
+                                )
                             )
-
-                            await bot.send_message(
-                                text=message_text,
-                                chat_id=new_created_video.chat_id,
-                                reply_to_message_id=new_created_video.msg_id,
+                            new_created_video.meta["hashtags"] = (
+                                handler_ctx.code_list or []
                             )
 
                             query = (
@@ -144,6 +166,7 @@ async def process_records():
                                 .values(
                                     status=VideoStatus.cleaned,
                                     ready_file_path=handler_ctx.source_filename,
+                                    meta=new_created_video.meta,
                                 )
                             )
                             await session.execute(query)

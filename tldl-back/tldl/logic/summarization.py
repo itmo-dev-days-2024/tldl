@@ -138,8 +138,7 @@ def run_ollama(user_text, prompt):
 def process_batch_ollama(batch):
     prompts = [
     """Ты программа, которая должна сократить лекцию, которая подается на входе. 
-    В ответе необходимо выдать только главную мысль текста в 2-3 предложениях на русском языке. 
-    В ответе необхходимо выдать только суммаризацию текста и ничего более. Не говори никаких доп слов.
+    В ответе необходимо выдать только главную мысль текста в 2-3 предложениях. Ответ необходимо давать на русском
     """,
     """Ты программа, котрая должна дать название текста, который поадается на вход. В ответе дай только название в формате `[title]`.
     Ответ необходимо давать на русском языке"""
@@ -150,15 +149,16 @@ def process_batch_ollama(batch):
     time_end = int(batch[-1].split("] ")[0].split(" -> ")[1].split(".")[0])
     
     cur_summ = run_ollama('\n'.join(batch), prompts[0])
-    cur_name = run_ollama('\n'.join(batch), prompts[1]).replace(']', '').replace('[', '')
+    cur_name = run_ollama('\n'.join(batch), prompts[1])
     print(f"start: {time_start} end: {time_end}\nName: {cur_name}\nSummary: {cur_summ}\n")
     return [cur_name, cur_summ, time_start, time_end]
     
         
 def process_text_ollama(text):
     prompt_code = """
-    Ты программа, которая должна для входной записи лекции подобрать список кодов, для сохранения в мессенджере. 
+    Ты программа, которая должна для входной записи лекции подобрать список хештегов, для сохранения в мессенджере. 
     Не учитывай временные метки.
+    Хештеги должны быть на русском языке.
     Сгенерируй не более 4-х кодов.
     Ответ дай в формате:
     #<code_name_1>
@@ -250,7 +250,7 @@ class SummarizerHandler(AbstractHandler):
         transcript_file.seek(0)
         context.summary = get_summarization(transcript_file.name)
         all_file_content = read_file_text(transcript_file.name)
-        charpers_from_yagpt = process_text_ollama(all_file_content, 220)
+        charpers_from_yagpt = process_text_ollama(all_file_content)
         context.chapters = [
             Chapter(ch[0], ch[1], ch[2], ch[3]) for ch in charpers_from_yagpt["res"]
         ]

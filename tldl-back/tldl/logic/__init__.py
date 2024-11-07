@@ -1,4 +1,4 @@
-from .base import TldlContext, TldlHandler
+from .base import TldlContext, TldlHandler, Chapter
 from .chapters import ChaptersHandler
 from .copyfile import CopyFileHandler
 from .silence import SilenceCutHandler
