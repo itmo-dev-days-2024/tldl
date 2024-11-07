@@ -17,6 +17,12 @@ class AppSettings(BaseSettings):
     s3_endpoint: str = os.getenv("S3_ENDPOINT", "https://storage.yandexcloud.net")
     s3_access_key_id: str = os.getenv("S3_ACCESS_KEY_ID", "xxx")
     s3_secret_access_key: str = os.getenv("S3_SECRET_ACCESS_KEY", "xxx")
+    
+    #LLMs
+    key_ya_gpt = os.getenv('KEY_YA_GPT')
+    folder_ya_gpt = os.getenv('FOLDER_YA_GPT')
+    key_gigachat = os.getenv('KEY_GIGACHAT')
+    
 
 
 settings = AppSettings()
