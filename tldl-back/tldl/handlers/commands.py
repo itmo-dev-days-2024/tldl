@@ -1,16 +1,27 @@
+import io
 import logging
-from datetime import date
-from typing import Optional
+
 from aiogram import Router
-from aiogram.filters import Command, CommandStart
+from aiogram.filters import CommandStart
 from aiogram.types import Message
+
 from sqlalchemy.ext.asyncio import AsyncSession
+from tempfile import NamedTemporaryFile
 
-# from tldl.schema import Feed
+from tldl.adapters import VideoRepository, create_boto_client
+from tldl.settings import settings
 
+from tldl.schema import VideoProcessing, VideoStatus
 
 router = Router(name="commands-router")
 logger = logging.getLogger(__name__)
+
+video_repo = VideoRepository(
+    settings.bucket_name,
+    create_boto_client(
+        settings.s3_endpoint, settings.s3_access_key_id, settings.s3_secret_access_key
+    ),
+)
 
 
 @router.message(CommandStart())
@@ -23,34 +34,35 @@ async def cmd_start(message: Message):
     )
 
 
-# @router.message(Command("status"))
-# async def cmd_status(message: Message, session: AsyncSession):
-#     current_date = date.today()
-#     current_feeder: Optional[Feed] = await session.get(Feed, current_date)
-#     if current_feeder is not None:
-#         await message.answer(f"Сегодня Бусю кормит @{current_feeder.feeder}!")
-#     else:
-#         await message.answer("Пока никто не кормит Бусю :c")
+@router.message()
+async def handle_file(message: Message, session: AsyncSession):
+    if message.document is None:
+        await message.reply(
+            "В твоем сообщении нет файла, убедись, что ты отправляешь лекцию как файл, а не видео!"
+        )
+        return
 
+    if message.document.file_id is None:
+        logging.error("Unable to get document file id")
+        return
 
-# @router.message(Command("feed"))
-# async def cmd_feed(message: Message, session: AsyncSession):
-#     current_date = date.today()
-#     current_feeder: Optional[Feed] = await session.get(Feed, current_date)
-#     if message.from_user is None:
-#         logging.warn("Unable to check the sender of a message")
-#         return
+    if not message.document.file_name.endswith(".mp4"):
+        await message.reply("Пока TLDL поддерживает только mp4")
+        return
 
-#     if current_feeder is not None:
-#         current_feeder.feeder = message.from_user.username
-#     else:
-#         current_feeder = Feed(day=current_date, feeder=message.from_user.username)
+    tg_file = await message.bot.get_file(message.document.file_id)
+    with NamedTemporaryFile(mode="+w", suffix=".mp4") as tmp_file:
+        await message.bot.download_file(tg_file.file_path, tmp_file.name)
+        video_repo.upload_file(tg_file.file_unique_id + ".mp4", tmp_file.name)
 
-#     await session.merge(current_feeder)
-#     await session.flush()
+    processing = VideoProcessing(
+        status=VideoStatus.created,
+        chat_id=str(message.chat.id),
+        msg_id=str(message.message_id),
+        raw_file_path=message.document.file_name,
+    )
 
-#     feed_msg = await message.answer(
-#         f"{current_date} Бусю будет кормить @{current_feeder.feeder}, спасибо <3"
-#     )
+    await session.merge(processing)
+    await session.flush()
 
-#     await message.bot.pin_chat_message(message.chat.id, feed_msg.message_id)
+    await message.answer("Твой файл принят на обработку, ожидай ответное сообщение")

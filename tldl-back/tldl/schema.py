@@ -15,7 +15,6 @@ import enum
 
 from sqlalchemy import (
     DateTime,
-    ForeignKey,
     MetaData,
     func,
 )

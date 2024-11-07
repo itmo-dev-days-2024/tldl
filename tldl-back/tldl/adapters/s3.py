@@ -1,16 +1,11 @@
-import os
-from minio import Minio
+import boto3
+import boto3.s3
 
 
-def init_minio_client() -> Minio:
-    return create_minio_client(
-        endpoint=os.getenv("MINIO_ENDPOINT"),  # без http/https
-        access_key=os.getenv("MINIO_ACCESS_KEY"),
-        secret_key=os.getenv("MINIO_SECRET_KEY"),
-    )
-
-
-def create_minio_client(endpoint: str, access_key: str, secret_key: str) -> Minio:
-    return Minio(
-        endpoint=endpoint, access_key=access_key, secret_key=secret_key, secure=False
+def create_boto_client(endpoint: str, access_key: str, secret_key: str):
+    return boto3.client(
+        service_name="s3",
+        endpoint_url=endpoint,
+        aws_access_key_id=access_key,
+        aws_secret_access_key=secret_key,
     )
