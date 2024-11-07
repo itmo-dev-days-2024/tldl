@@ -25,6 +25,9 @@ class Chapter:
     start_pts: int
     end_pts: int
 
+    def __str__(self):
+        return f"[{self.start_pts} - {self.end_pts}] - {self.title}: {self.description}"
+
 
 @dataclass
 class TldlContext:

@@ -15,7 +15,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.chat_models.gigachat import GigaChat
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.embeddings.gigachat import GigaChatEmbeddings
-from summarization.keys import key_gigachat
+from tldl.settings import settings
 # from ml.summarization import get_summarization
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
@@ -115,7 +115,7 @@ def process_text(text, size):
 #GigaChain
 #----------------------------------------------------------------------------------------------------------------------------
 
-credentials = key_gigachat
+credentials = settings.key_gigachat 
 # from PyPDF2 import PdfFileReader
 llm = GigaChat(credentials=credentials, verify_ssl_certs=False, scope="GIGACHAT_API_PERS")
 embeddings = GigaChatEmbeddings(credentials=credentials, verify_ssl_certs=False, scope="GIGACHAT_API_PERS")

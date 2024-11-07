@@ -6,7 +6,6 @@ from aiogram import Bot
 from aiogram.types import FSInputFile
 from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.client.telegram import TelegramAPIServer
-from main import SummarizerHandler
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 
@@ -20,7 +19,7 @@ from tldl.logic import (
     TranscriberHandler,
     ChaptersHandler,
     TldlContext,
-    SummarizerHandler
+    SummarizerHandler,
 )
 
 video_repo = VideoRepository(
@@ -91,12 +90,16 @@ async def process_records():
     sessionmaker = async_sessionmaker(engine, expire_on_commit=False)
 
     tldl_handler = CopyFileHandler().set_next(
-        SilenceCutHandler().set_next(TranscriberHandler().set_next(SummarizerHandler().set_next(ChaptersHandler())))
+        SilenceCutHandler().set_next(
+            TranscriberHandler().set_next(
+                SummarizerHandler().set_next(ChaptersHandler())
+            )
+        )
     )
 
     while True:
         try:
-            await asyncio.sleep(5)
+            await asyncio.sleep(1)
             async with sessionmaker() as session:
                 async with session.begin():
                     query = (
@@ -123,9 +126,16 @@ async def process_records():
                                 handler_ctx.source_filename, handler_ctx.source_filename
                             )
 
-                            logger.info(
-                                "Transcribe tokens for video %s",
-                                handler_ctx.transcribed_text,
+                            logger.info("Finished processing for video")
+
+                            message_text = "\n".join(
+                                map(lambda x: str(x), handler_ctx.chapters)
+                            )
+
+                            await bot.send_message(
+                                text=message_text,
+                                chat_id=new_created_video.chat_id,
+                                reply_to_message_id=new_created_video.msg_id,
                             )
 
                             query = (
@@ -141,7 +151,7 @@ async def process_records():
                     await session.commit()
 
         except Exception as e:
-            logger.error("Error while processing records")
+            logger.error("Error while processing records %s", e)
 
 
 async def run_worker():
