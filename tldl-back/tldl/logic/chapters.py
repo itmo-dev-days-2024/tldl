@@ -13,7 +13,7 @@ class ChaptersHandler(AbstractHandler):
             meatadata_file.write(";FFMETADATA1\n")
             for chapter in context.chapters:
                 meatadata_file.write(
-                    f"[CHAPTER]\nTIMEBASE=1/1000\nSTART={chapter.start_pts}\nEND={chapter.end_pts}\ntitle={chapter.title}\n\n"
+                    f"[CHAPTER]\nTIMEBASE=1/1000\nSTART={chapter.start_pts * 1000}\nEND={chapter.end_pts * 1000}\ntitle={chapter.title}\n\n"
                 )
             meatadata_file.flush()
 
