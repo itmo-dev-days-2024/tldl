@@ -138,8 +138,7 @@ def run_ollama(user_text, prompt):
 def process_batch_ollama(batch):
     prompts = [
     """Ты программа, которая должна сократить лекцию, которая подается на входе. 
-    В ответе необходимо выдать только главную мысль текста в 2-3 предложениях на русском языке. 
-    В ответе необхходимо выдать только суммаризацию текста и ничего более. Не говори никаких доп слов.
+    Расскажи суть лекции в 4-5 предложениях. Ответ необходимо давать на русском
     """,
     """Ты программа, котрая должна дать название текста, который поадается на вход. В ответе дай только название в формате `[title]`.
     Ответ необходимо давать на русском языке"""
@@ -150,7 +149,7 @@ def process_batch_ollama(batch):
     time_end = int(batch[-1].split("] ")[0].split(" -> ")[1].split(".")[0])
     
     cur_summ = run_ollama('\n'.join(batch), prompts[0])
-    cur_name = run_ollama('\n'.join(batch), prompts[1]).replace(']', '').replace('[', '')
+    cur_name = run_ollama('\n'.join(batch), prompts[1])
     print(f"start: {time_start} end: {time_end}\nName: {cur_name}\nSummary: {cur_summ}\n")
     return [cur_name, cur_summ, time_start, time_end]
     
