@@ -3,8 +3,9 @@
 from tldl.logic.base import Chapter, TranscribeToken, AbstractHandler, TldlContext
 import requests
 from tldl.settings import settings
-
-
+#Ollama libs
+from ollama import Client
+import ollama
 #GigaChain libs
 
 from langchain.chains.summarize import load_summarize_chain
@@ -37,13 +38,7 @@ def read_file_text(file_path):
 #YaGPT
 #----------------------------------------------------------------------------------------------------------------------------
 
-prompts = [
-    """Ты программа, которая должна сократить транскрипцию, которая подается на входе. 
-    Выдели самые важные момента из этой записи и расскажи об этом в 2-3 предложениях. """,
-    """Ты программа, котрая должна дать название текста, который поадается на вход. В ответе дай только название в формате `<name>`
-    """
-    
-]
+
 
 def run(iam_token, folder_id, user_text, prompt):    
     prompt = {
@@ -78,7 +73,13 @@ def run(iam_token, folder_id, user_text, prompt):
     return result['result']['alternatives'][0]['message']['text']
 
 def process_batch(batch):
+    prompts = [
+    """Ты программа, которая должна сократить транскрипцию, которая подается на входе. 
+    Выдели самые важные момента из этой записи и расскажи об этом в 2-3 предложениях. """,
+    """Ты программа, котрая должна дать название текста, который поадается на вход. В ответе дай только название в формате `<name>`
+    """
     
+    ]
     time_start = int(batch[0].split("] ")[0].split(".")[0])
     time_end = int(batch[-1].split("] ")[0].split(" -> ")[1].split(".")[0])
     cur_summ = run(settings.key_ya_gpt, settings.folder_ya_gpt,'\n'.join(batch), prompts[0])
@@ -110,6 +111,92 @@ def process_text(text, size):
         
     return result
 
+
+# URL = 
+
+
+
+    
+def run_ollama(user_text, prompt): 
+    client = Client(host=settings.url_llama)
+    # print(client.list())
+    response = client.chat(model='llama3', messages=[
+    {
+        "role": "system",
+        'content': prompt
+    },
+    {
+        "role": "user",
+        'content': prompt + f"Входные данные: {user_text}"
+    }
+    ])   
+
+
+    return response['message']['content']
+
+
+def process_batch_ollama(batch):
+    prompts = [
+    """Ты программа, которая должна сократить лекцию, которая подается на входе. 
+    Расскажи суть лекции в 4-5 предложениях. Ответ необходимо давать на русском
+    """,
+    """Ты программа, котрая должна дать название текста, который поадается на вход. В ответе дай только название в формате `[title]`.
+    Ответ необходимо давать на русском языке"""
+    
+    
+    ]
+    time_start = int(batch[0].split("] ")[0].split(".")[0])
+    time_end = int(batch[-1].split("] ")[0].split(" -> ")[1].split(".")[0])
+    
+    cur_summ = run_ollama('\n'.join(batch), prompts[0])
+    cur_name = run_ollama('\n'.join(batch), prompts[1])
+    print(f"start: {time_start} end: {time_end}\nName: {cur_name}\nSummary: {cur_summ}\n")
+    return [cur_name, cur_summ, time_start, time_end]
+    
+        
+def process_text_ollama(text):
+    prompt_code = """
+    Ты программа, которая должна для входной записи лекции подобрать список кодов, для сохранения в мессенджере. 
+    Не учитывай временные метки.
+    Сгенерируй не более 4-х кодов.
+    Ответ дай в формате:
+    #<code_name_1>
+    #<code_name_2>
+    #<code_name_3>
+    #<code_name_4>
+    """
+    
+    
+
+    lines = text.split('[')
+    result = []
+
+    batch = []
+    size = len(lines)/5
+    if size <=100:
+        size = len(lines)/3
+   
+    for line in lines:
+        if line.strip(): 
+            batch.append(line)
+        
+        if len(batch) == size:
+            result.append(process_batch_ollama(batch=batch))
+            # run(batch)
+            batch = []
+
+    if batch:
+        result.append(process_batch_ollama(batch=batch))
+        # run(batch)
+    codes: str = run_ollama(text, prompt_code).replace(" ", '').split('\n')    
+    print(codes)
+    return {"res": result, "codes":codes}
+
+
+
+
+    
+    
 
 
 #GigaChain
@@ -162,10 +249,11 @@ class SummarizerHandler(AbstractHandler):
         transcript_file.seek(0)
         context.summary = get_summarization(transcript_file.name)
         all_file_content = read_file_text(transcript_file.name)
-        charpers_from_yagpt = process_text(all_file_content, 220)
+        charpers_from_yagpt = process_text_ollama(all_file_content, 220)
         context.chapters = [
-            Chapter(ch[0], ch[1], ch[2], ch[3]) for ch in charpers_from_yagpt
+            Chapter(ch[0], ch[1], ch[2], ch[3]) for ch in charpers_from_yagpt["res"]
         ]
+        context.code_list = charpers_from_yagpt["codes"]
         # print(context.summary)
         # print(context.chapters)
         return super().handle(context)

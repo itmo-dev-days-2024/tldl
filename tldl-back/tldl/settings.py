@@ -22,6 +22,7 @@ class AppSettings(BaseSettings):
         "KEY_GIGACHAT",
         "xxx",
     )
+    url_llama: str = os.getenv('URL_LLAMA', "http://localhost:11434")
 
 
 settings = AppSettings()

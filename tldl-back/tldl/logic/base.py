@@ -39,6 +39,7 @@ class TldlContext:
     transcribed_text: list[TranscribeToken] = None
     summary: str = ""
     chapters: list[Chapter] = None
+    code_list: list[str] = None
 
 
 class TldlHandler:
