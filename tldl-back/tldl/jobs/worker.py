@@ -6,6 +6,7 @@ from aiogram import Bot
 from aiogram.types import FSInputFile
 from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.client.telegram import TelegramAPIServer
+from main import SummarizerHandler
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 
@@ -19,6 +20,7 @@ from tldl.logic import (
     TranscriberHandler,
     ChaptersHandler,
     TldlContext,
+    SummarizerHandler
 )
 
 video_repo = VideoRepository(
@@ -89,7 +91,7 @@ async def process_records():
     sessionmaker = async_sessionmaker(engine, expire_on_commit=False)
 
     tldl_handler = CopyFileHandler().set_next(
-        SilenceCutHandler().set_next(TranscriberHandler().set_next(ChaptersHandler()))
+        SilenceCutHandler().set_next(TranscriberHandler().set_next(SummarizerHandler().set_next(ChaptersHandler())))
     )
 
     while True:
