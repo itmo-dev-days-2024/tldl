@@ -59,7 +59,7 @@ async def handle_file(message: Message, session: AsyncSession):
         status=VideoStatus.created,
         chat_id=str(message.chat.id),
         msg_id=str(message.message_id),
-        raw_file_path=message.document.file_name,
+        raw_file_path=tg_file.file_unique_id + ".mp4",
     )
 
     await session.merge(processing)

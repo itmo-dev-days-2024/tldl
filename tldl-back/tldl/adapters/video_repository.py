@@ -16,5 +16,5 @@ class VideoRepository:
         self._client.upload_file(data, self._bucket, object_name)
 
     def get_file(self, object_name: str, to_filename: str):
-        result = self._client.get_object(self._bucket, object_name, to_filename)
-        return result.data
+        result = self._client.download_file(self._bucket, object_name, to_filename)
+        return result
