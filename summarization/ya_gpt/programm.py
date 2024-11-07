@@ -93,6 +93,9 @@ def process_text(text, size):
     result = []
 
     batch = []
+    if(len(lines) <= size*2):
+        size = len(lines)/3
+
     for line in lines:
         if line.strip(): 
             batch.append(line)

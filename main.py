@@ -8,6 +8,7 @@ from tempfile import NamedTemporaryFile
 
 import summarization.giga_chat.programm as gigachat
 import summarization.ya_gpt.programm as ya_gpt
+import summarization.utils as sum_utils 
 
 from silence_cutter import cut_silences
 
@@ -92,15 +93,18 @@ class SummarizerHandler(AbstractHandler):
 
     def handle(self, context: TldlContext) -> TldlContext:
         # here context gets populated for Chapters
-        with NamedTemporaryFile("+w", suffix=".txt") as transcribed_file:
-            for chunk in context.transcribed_text:
-                transcribed_file.write(str(chunk))
-            context.summary = gigachat.get_summarization(transcribed_file.name)
-            all_file_content = transcribed_file.read()
-            charpers_from_yagpt = ya_gpt.process_text(all_file_content, 220)
-            context.chapters = [
-                Chapter(ch[0], ch[1], ch[2], ch[3]) for ch in charpers_from_yagpt
-            ]
+        transcript_file = open('transcript_tmp.txt','w+')
+        for chunk in context.transcribed_text:
+            transcript_file.write(str(chunk))
+        transcript_file.seek(0)
+        context.summary = gigachat.get_summarization(transcript_file.name)
+        all_file_content = sum_utils.read_file_text(transcript_file.name)
+        charpers_from_yagpt = ya_gpt.process_text(all_file_content, 220)
+        context.chapters = [
+            Chapter(ch[0], ch[1], ch[2], ch[3]) for ch in charpers_from_yagpt
+        ]
+        # print(context.summary)
+        # print(context.chapters)
         return super().handle(context)
 
 
