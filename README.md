@@ -1,5 +1,8 @@
 # TLDL
 
+## Ссылка на презентацию
+https://docs.google.com/presentation/d/1vPLG_lQDozmd5XGWLzBU6IT8CM1K0U8-JEa4oOdejrQ/edit?usp=sharing
+
 ## Как запускать
 [Инструкция](tldl-back/README.md)
 
